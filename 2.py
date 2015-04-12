@@ -31,32 +31,34 @@
 # if cv2.waitKey(1) & 0xFF == ord('q'):
 #     exit()
 
-
 def get_largest_contour(contours):
 
 	# Calculate rectangles around min,min and max, max.
 	# Note, this is only taking 2 points into account... nvm it is doing
 	# top, bottom, left and right most points, and drawing a rectangle
 	for x in xrange(len(contours)):
-		min_x = 800
+		min_x = wid
 		max_x = 0
-		min_y = 1000
+		min_y = hei
 		max_y = 0
+		# print "wid",wid
+		# print "hei",hei
 		for point in contours[x]:
 			# print point[0][0]
-			if point[0][0] < min_x:
-				min_x = point[0][0]
-			elif point[0][0] > max_x:
-				max_x = point[0][0]
+			if point[0][0] < min_x:# and point[0][0] > 80:
+				if(point[0][0] > 40 and point[0][0] != 0):
+					min_x = point[0][0]
+			elif point[0][0] > max_x:# and point[0][0] < wid - 80:
+				if(point[0][0] < wid - 40 and point[0][0] != 0):
+					max_x = point[0][0]
 			if point[0][1] < min_y:
-				min_y = point[0][1]
-			elif point[0][1] > max_y:
-				max_y = point[0][1]
+				if(point[0][1] > 40 and point[0][1] != 0):
+					min_y = point[0][1]
+			elif point[0][1] > max_y:# and point[0][1] < hei - 80:
+				if(point[0][1] < hei - 40 and point[0][1] != 0):
+					max_y = point[0][1]
 		contour = np.array([[[min_x, min_y]], [[min_x, max_y]], [[max_x, max_y]], [[max_x, min_y]]])
-		# contour = [[[min_x, min_y]], [[max_x, max_y]]]
-		# print "---Contour:---"
-		# print contour
-		# print "---Numpy:---"
+		# Start in upper left, goes counter clock-wise
 		contours[x] = contour
 
 	# Now calculate the area of each contour, and select only the biggest
@@ -64,10 +66,9 @@ def get_largest_contour(contours):
 	max_area = 0
 	largest_contour = 0
 	for x in xrange(len(contours)):
-		length = 0
-		height = 0
-		area = 0
+
 		# 		 contours[contour number][point][0][0:x or 1:y]
+
 		length = contours[x]			 [2]	[0][0] - contours[x][0][0][0]
 		height = contours[x]			 [2]	[0][1] - contours[x][0][0][1]
 
@@ -75,6 +76,8 @@ def get_largest_contour(contours):
 		# print "height:", height
 		area = length * height
 
+		if(height < 0 or length < 0):
+			continue
 		# print "area:", area
 
 		if area > max_area:
@@ -90,7 +93,11 @@ def get_largest_contour(contours):
 	# contourz = [np.array(([[[min_x, min_y]], [[min_x, max_y]], [[max_x, max_y]], [[max_x, min_y]]]))]
 	# }
 
-	return [contours[largest_contour]]
+	if(len(contours) <= largest_contour):
+		return -1
+	else:
+		# print "selected:", contours[largest_contour]
+		return [contours[largest_contour]]
 
 
 # print len(contours)
@@ -99,14 +106,13 @@ def get_largest_contour(contours):
 
 import numpy as np
 import cv2
+# import move
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 
-print cap
-print(cap.get(3))
-print(cap.get(4))
-# if cv2.isOpened
-print("Hello World")
+ret, fram = cap.read()
+
+hei, wid, dep = fram.shape
 
 # def invert_image(imagem, new_name):
 #     imagem = (255-imagem)
@@ -132,47 +138,67 @@ while(True):
     mask_eroded = cv2.erode(flipped_gray, kernel, iterations = 22)
 
     # Blur
-    #blurred = cv2.blur(mask_eroded, (5,5))
+    blurred = cv2.blur(mask_eroded, (5,5))
 
     # Dilate
-    mask_dilated = cv2.dilate(mask_eroded, kernel, iterations = 22)
+    mask_dilated = cv2.dilate(blurred, kernel, iterations = 22)
 
     # Find Contours
     ret, thresh_neg = cv2.threshold(mask_dilated, 127,255,0)
 
-    # cv2.imshow("neg", thresh)
-    # cv2.imshow("pos", (255 - thresh))
-
-    # thresh_pos = (255 - thresh_neg)
-
-    # contours_pos, hierarchy_p = cv2.findContours(thresh_pos, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     contours_neg, hierarchy_n = cv2.findContours(thresh_neg, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-    # contours_pos = get_largest_contour(contours_pos)
     contours_neg = get_largest_contour(contours_neg)
 
-    # pos = pos_flipped_gray
+    if(contours_neg == -1):
+    	continue;
+
     neg = flipped_gray
-    # if(contours_pos):
-    # cv2.drawContours(pos, contours_pos, -1, (0,255,0), 3)
-    # if(contours_neg):
+
     cv2.drawContours(neg, contours_neg, -1, (0,255,0), 3)
+    # print "1", contours_neg[0][0][0][0]
+    # print "2", contours_neg[0][3][0][0]
+    # print "3", contours_neg[0][1][0][1]
+    # print "4", contours_neg[0][2][0][1]
 
-    # cv2.imshow('Pos', pos)
-    #cv2.imshow('Neg', neg)
-    print "FRAME" 
-    # cv2.imshow('frame1',flipped_gray)
-    # ///////////////////////////
+    middle_x = (contours_neg[0][0][0][0] + contours_neg[0][3][0][0])/2
+    middle_y = (contours_neg[0][1][0][1] + contours_neg[0][0][0][1])/2
 
-    # gray_x =  cv2.flip(gray,0)
-    # flipped_gray_x =  cv2.flip(flipped_gray,0)
 
-    # Display the resulting frame
-    
-    # cv2.imshow('frame2',gray)
 
-    # cv2.imshow('frame3',flipped_gray_x)
-    # cv2.imshow('frame4',gray_x)
+    # img = np.zeros((480,640,1), np.uint8)
+    # # Top Left
+    # cv2.circle(img,(contours_neg[0][0][0][0], contours_neg[0][0][0][1]), 5, (255,0,0), 5)    
+
+    # # Top Right
+    # cv2.circle(img,(contours_neg[0][3][0][0], contours_neg[0][3][0][1]), 5, (255,0,0), 5)    
+
+    # # Bottom Left:
+    # cv2.circle(img,(contours_neg[0][1][0][0], contours_neg[0][1][0][1]), 5, (255,0,0), 5)
+
+    # # Bottom Right
+    # cv2.circle(img,(contours_neg[0][2][0][0], contours_neg[0][2][0][1]), 5, (255,0,0), 5)    
+
+    # cv2.imshow('image',img)
+
+    if(middle_y > 260):
+    	# move.forward()
+    	print "forward"
+    else:
+    	print "stopped"
+    if(middle_x < 300):
+    	print "RIGHT"
+    if(middle_x > 340):
+    	print "LEFT"
+
+    # if(middle_x)
+
+    # print contours_neg[0]
+    # print contours_neg[0][0]
+    # print contours_neg[0][0][0]
+    # print middle_x, middle_y
+
+    cv2.imshow('Neg', neg)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
