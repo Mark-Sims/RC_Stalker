@@ -100,7 +100,7 @@ def get_largest_contour(contours):
 import numpy as np
 import cv2
 
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(0)
 
 print cap
 print(cap.get(3))
@@ -132,10 +132,10 @@ while(True):
     mask_eroded = cv2.erode(flipped_gray, kernel, iterations = 22)
 
     # Blur
-    blurred = cv2.blur(mask_eroded, (5,5))
+    #blurred = cv2.blur(mask_eroded, (5,5))
 
     # Dilate
-    mask_dilated = cv2.dilate(blurred, kernel, iterations = 22)
+    mask_dilated = cv2.dilate(mask_eroded, kernel, iterations = 22)
 
     # Find Contours
     ret, thresh_neg = cv2.threshold(mask_dilated, 127,255,0)
@@ -159,8 +159,8 @@ while(True):
     cv2.drawContours(neg, contours_neg, -1, (0,255,0), 3)
 
     # cv2.imshow('Pos', pos)
-    cv2.imshow('Neg', neg)
-    
+    #cv2.imshow('Neg', neg)
+    print "FRAME" 
     # cv2.imshow('frame1',flipped_gray)
     # ///////////////////////////
 
